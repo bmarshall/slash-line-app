@@ -1,0 +1,75 @@
+<!-- Build our DOM -->
+<body>
+    <player-list id="playerList"></player-list>
+    <div id="slashLine"></div>
+</body>
+
+<script>
+    // define our players and their slash lines
+    const players = [
+        { name: 'Yasmani Grandal', avg: .230, obp: .351, slg: .422 },
+        { name: 'José Abreu', avg: .317, obp: .370, slg: .617 },
+        { name: 'Nick Madrigal', avg: .340, obp: .376, slg: .369 },
+        { name: 'Tim Anderson', avg: .322, obp: .357, slg: .529 },
+        { name: 'Yoan Moncada', avg: .225, obp: .320, slg: .385 },
+        { name: 'Eloy Jimenez', avg: .296,obp: .332, slg: .559 },
+        { name: 'Luis Robert', avg: .233, obp: .302, slg: .436 }
+    ];
+
+    // define the leagues average slash line
+    const league = { avg: .243, obp: .319, slg: 414 }
+
+    // function that wil help us format our slash line values
+    const formatPercentage = (val) => val.toFixed(3).substring(1);
+
+    // ths function is called once our Svelte SlashLine component has loaded
+    const onSlashLineComponentLoaded = () => {
+
+        /*
+        Once SlashLine.js is loaded it is attached to the window (using the naming convention
+        specified in the components package.json when compiling).  Now that the class is available
+        us, we can create a new instance.
+        */
+        let mySlashLineComponent = new window.SlashLine({
+            // initial set of props
+            props: {
+                baseSlashLine: league
+            },
+            // the target that the slash line component will be attached to.
+            target: document.getElementById("slashLine")
+        });
+
+        // One the instance has been created we can add event listeners that will react to svelte events.
+        mySlashLineComponent.$on('statClicked', ({ detail })=> {
+            /*
+            In this case we will listen to the 'statClicked' event dispatched from our SlashLine when a user clicks
+            on one of the stats displayed in the stat line component.  When the event is dispatched we will display
+            an alert showing the difference between the stat and league average for that stat.
+            */
+            const { name, stat, difference } = detail;
+            const comparisonMessage =
+                difference >= 0 ? 'better than league average': 'worse than league average';
+            alert(`${name} is ${formatPercentage(difference)} ${comparisonMessage} ${stat}`);
+        });
+
+        // this is a higher order function that will be used by the PlayerList web component to interact
+        // with the the Svelt SlashLine Component.
+        const toPlayerClickHandler =
+            (player) => () => {
+                /*
+                since we have access to the mySlashLineComponent instance we can update part, or all of its props
+                using the $$set method.  The svelte component will act just like it would if the props were being
+                changed by another svelte component and trigger any binding.
+                */
+                mySlashLineComponent.$$set({comparatorSlashLine: player});
+            }
+        // now that we have access to all of the player information we can have our PlayerList WebComponent render
+        // the list of players.  Clicking on one of these players will update mySlashLineComponent's props.
+        document.getElementById('playerList').drawList(players, toPlayerClickHandler );
+    }
+
+
+</script>
+
+<script type="text/javascript" src="./components/player-list/PlayerList.js"></script>
+<script type="text/javascript" src="./components/slash-line/SlashLine.js" onload="onSlashLineComponentLoaded()"></script>
